@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Tax Regime Selector - Find the Best Tax Regime Based on Your Gross Salary">
+    <meta name="keywords" content="tax regime, new tax regime, old tax regime, tax savings, income tax">
+    <meta name="author" content="YourName">
+    <title>Tax Regime Selector - Find the Best Option for You</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+        }
+        .summary h3 {
+            font-size: 18px;
+            color: #007bff;
+        }
+        .summary p {
+            font-size: 16px;
+            color: #333;
+        }
+        .comparison-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        .comparison-table th, .comparison-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        .comparison-table th {
+            background-color: #007bff;
+            color: white;
+        }
+        .comparison-table td {
+            background-color: #f4f7f9;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Tax Regime Selector</h1>
+        <label for="grossSalary">Enter Your Gross Salary (₹):</label>
+        <input type="number" id="grossSalary" aria-label="Gross Salary" placeholder="Enter your gross salary" aria-describedby="grossSalaryHelp">
+        <small id="grossSalaryHelp">Please enter your total gross salary.</small>
+
+        <h3>Possible Deductions (Old Regime):</h3>
+        <label for="sec80C">Section 80C (₹1.5 lakh max including PF):</label>
+        <input type="number" id="sec80C" value="150000" aria-label="Section 80C deductions" placeholder="Enter 80C deductions">
+
+        <label for="nps">NPS (₹50,000 max):</label>
+        <input type="number" id="nps" value="50000" aria-label="NPS deductions" placeholder="Enter NPS deductions">
+
+        <label for="homeLoan">Home Loan Interest (₹2 lakh max):</label>
+        <input type="number" id="homeLoan" value="200000" aria-label="Home Loan Interest deductions" placeholder="Enter Home Loan Interest deductions">
+
+        <label for="hra">HRA Deductions (₹ as per actual rent):</label>
+        <input type="number" id="hra" value="0" aria-label="HRA deductions" placeholder="Enter HRA deductions">
+
+        <label for="healthInsurance">Health Insurance Premium (₹):</label>
+        <input type="number" id="healthInsurance" value="0" placeholder="Enter Health Insurance Premiums">
+
+        <label for="parentHealthInsurance">Parents' Health Insurance Premium (₹):</label>
+        <input type="number" id="parentHealthInsurance" value="0" placeholder="Enter Parents' Health Insurance Premiums">
+
+        <button class="btn" onclick="calculateBestRegime()">Calculate Best Regime</button>
+
+        <div class="summary" id="summary" style="display:none;">
+            <h3>Investment Suggestions &amp; Tax Regime Summary</h3>
+            <p id="regimeSuggestion"></p>
+            <p id="investmentOptions"></p>
+
+            <h3>Tax Deduction Comparison (New vs Old Regime)</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Income Slab</th>
+                        <th>Old Regime Tax (with deductions)</th>
+                        <th>New Regime Tax (with PF deduction)</th>
+                        <th>Old Regime % per Slab</th>
+                        <th>New Regime % per Slab</th>
+                    </tr>
+                </thead>
+                <tbody id="taxComparisonTable">
+                    <!-- Filled by JS -->
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td>Total Tax Payable</td>
+                        <td id="totalTaxOld"></td>
+                        <td id="totalTaxNew"></td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Note: This tool provides an estimate based on current tax laws and deduction options.</p>
+    </div>
+
+    <script>
+        function calculateBestRegime() {
+            const grossSalary = parseFloat(document.getElementById('grossSalary').value);
+            if (!grossSalary || grossSalary <= 0) {
+                alert('Please enter a valid gross salary.');
+                return;
+            }
+
+            const sec80C = Math.min(parseFloat(document.getElementById('sec80C').value) || 0, 150000);
+            const nps = Math.min(parseFloat(document.getElementById('nps').value) || 0, 50000);
+            const homeLoan = Math.min(parseFloat(document.getElementById('homeLoan').value) || 0, 200000);
+            const hra = parseFloat(document.getElementById('hra').value) || 0;
+            const healthInsurance = Math.min(parseFloat(document.getElementById('healthInsurance').value) || 0, 25000);
+            const parentHealthInsurance = Math.min(parseFloat(document.getElementById('parentHealthInsurance').value) || 0, 50000);
+
+            // Total deductions for Old Regime
+            const totalDeductionsOld = sec80C + nps + homeLoan + hra + healthInsurance + parentHealthInsurance;
+            const taxableIncomeOld = grossSalary - totalDeductionsOld;
+
+            // Total deductions for New Regime (PF not considered separately)
+            const taxableIncomeNew = grossSalary;
+
+            const taxOldRegime = calculateOldRegimeTax(taxableIncomeOld);
+            const taxNewRegime = calculateNewRegimeTax(taxableIncomeNew);
+
+            let suggestion = '';
+            let investments = '';
+
+            if (taxOldRegime < taxNewRegime) {
+                suggestion = `Based on your gross salary of ₹${grossSalary}, the Old Regime is more beneficial for you.`;
+                investments = `Possible deductions (Old Regime):
+                \n- ₹${sec80C} under Section 80C (PF, ELSS, LIC, etc.)
+                \n- ₹${nps} under NPS
+                \n- ₹${homeLoan} under Home Loan Interest
+                \n- ₹${hra} under HRA
+                \n- ₹${healthInsurance} for Health Insurance Premiums
+                \n- ₹${parentHealthInsurance} for Parents' Health Insurance Premiums`;
+            } else {
+                suggestion = `Based on your gross salary of ₹${grossSalary}, the New Regime is more beneficial for you.`;
+                investments = `Since the New Regime does not offer deductions (except for PF), focus on high-return investments like mutual funds or stocks.`;
+            }
+
+            document.getElementById('regimeSuggestion').innerText = suggestion;
+            document.getElementById('investmentOptions').innerText = investments;
+
+            updateTaxComparisonTable(taxableIncomeOld, taxableIncomeNew, taxOldRegime, taxNewRegime);
+            document.getElementById('summary').style.display = 'block';
+        }
+
+        function updateTaxComparisonTable(taxableIncomeOld, taxableIncomeNew, taxOldRegime, taxNewRegime) {
+            const taxComparisonTable = document.getElementById('taxComparisonTable');
+            taxComparisonTable.innerHTML = '';
+
+            const oldTaxDetails = calculateOldRegimeTaxDetails(taxableIncomeOld);
+            const newTaxDetails = calculateNewRegimeTaxDetails(taxableIncomeNew);
+
+            // Populate the table with old regime details
+            taxComparisonTable.innerHTML += `
+                <tr>
+                    <td>₹0 - ₹2.5 lakh</td>
+                    <td>₹${oldTaxDetails[0].toFixed(2)}</td>
+                    <td>₹${newTaxDetails[0].toFixed(2)}</td>
+                    <td>0%</td>
+                    <td>0%</td>
+                </tr>
+                <tr>
+                    <td>₹2.5 lakh - ₹5 lakh</td>
+                    <td>₹${oldTaxDetails[1].toFixed(2)}</td>
+                    <td>₹${newTaxDetails[1].toFixed(2)}</td>
+                    <td>5%</td>
+                    <td>5%</td>
+                </tr>
+                <tr>
+                    <td>₹5 lakh - ₹10 lakh</td>
+                    <td>₹${oldTaxDetails[2].toFixed(2)}</td>
+                    <td>₹${newTaxDetails[2].toFixed(2)}</td>
+                    <td>20%</td>
+                    <td>10%-15%</td>
+                </tr>
+                <tr>
+                    <td>Above ₹10 lakh</td>
+                    <td>₹${oldTaxDetails[3].toFixed(2)}</td>
+                    <td>₹${newTaxDetails[3].toFixed(2)}</td>
+                    <td>30%</td>
+                    <td>20%-30%</td>
+                </tr>
+            `;
+
+            document.getElementById('totalTaxOld').innerText = `₹${taxOldRegime.toFixed(2)}`;
+            document.getElementById('totalTaxNew').innerText = `₹${taxNewRegime.toFixed(2)}`;
+        }
+
+        function calculateOldRegimeTax(income) {
+            return income > 0 ? calculateOldRegimeTaxDetails(income).reduce((a, b) => a + b, 0) : 0;
+        }
+
+        function calculateNewRegimeTax(income) {
+            return income > 0 ? calculateNewRegimeTaxDetails(income).reduce((a, b) => a + b, 0) : 0;
+        }
+
+        function calculateOldRegimeTaxDetails(income) {
+            const slabs = [
+                { limit: 250000, rate: 0 },
+                { limit: 500000, rate: 0.05 },
+                { limit: 1000000, rate: 0.2 },
+                { limit: Infinity, rate: 0.3 }
+            ];
+
+            let taxDetails = [];
+            let previousLimit = 0;
+
+            for (const slab of slabs) {
+                const taxable = Math.max(Math.min(income, slab.limit) - previousLimit, 0);
+                const tax = taxable * slab.rate;
+                taxDetails.push(tax);
+                previousLimit = slab.limit;
+            }
+
+            return taxDetails;
+        }
+
+        function calculateNewRegimeTaxDetails(income) {
+            const slabs = [
+                { limit: 250000, rate: 0 },
+                { limit: 500000, rate: 0.05 },
+                { limit: 750000, rate: 0.1 },
+                { limit: 1000000, rate: 0.15 },
+                { limit: 1250000, rate: 0.2 },
+                { limit: 1500000, rate: 0.25 },
+                { limit: Infinity, rate: 0.3 }
+            ];
+
+            let taxDetails = [];
+            let previousLimit = 0;
+
+            for (const slab of slabs) {
+                const taxable = Math.max(Math.min(income, slab.limit) - previousLimit, 0);
+                const tax = taxable * slab.rate;
+                taxDetails.push(tax);
+                previousLimit = slab.limit;
+            }
+
+            return taxDetails;
+        }
+    </script>
+</body>
+</html>
